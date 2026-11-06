@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja de Pizza Creeper - Pedido Especial</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Pixelated -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Modern pixel fonts */
+        .font-pixel { font-family: 'Press Start 2P', monospace; }
+        .font-vt { font-family: 'VT323', monospace; }
+
+        /* Custom Pixel Borders for Minecraft UI */
+        .mc-button {
+            background-color: #7d7d7d;
+            border: 4px solid #000;
+            box-shadow: inset -4px -4px #4a4a4a, inset 4px 4px #b8b8b8;
+            color: #ffffff;
+            text-shadow: 2px 2px #000;
+            transition: all 0.1s ease;
+        }
+        .mc-button:hover {
+            background-color: #8b8b8b;
+            box-shadow: inset -4px -4px #5a5a5a, inset 4px 4px #c8c8c8;
+        }
+        .mc-button:active {
+            box-shadow: inset 4px 4px #4a4a4a, inset -4px -4px #b8b8b8;
+            transform: translateY(2px);
+        }
+
+        .mc-button-green {
+            background-color: #388e3c;
+            box-shadow: inset -4px -4px #1b5e20, inset 4px 4px #81c784;
+        }
+        .mc-button-green:hover {
+            background-color: #43a047;
+            box-shadow: inset -4px -4px #2e7d32, inset 4px 4px #a5d6a7;
+        }
+
+        .mc-card {
+            background-color: #c6c6c6;
+            border: 4px solid #000;
+            box-shadow: inset -4px -4px #555555, inset 4px 4px #ffffff;
+        }
+
+        /* 3D Pizza Box Styling */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        
+        .box-container {
+            width: 300px;
+            height: 300px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+        }
+
+        @media (min-width: 640px) {
+            .box-container {
+                width: 380px;
+                height: 380px;
+            }
+        }
+
+        .box-lid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-origin: top;
+            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+            z-index: 20;
+        }
+
+        .box-lid.open {
+            transform: rotateX(-115deg);
+        }
+
+        /* Minecraft Creeper Face Pattern */
+        .creeper-bg {
+            background-color: #55aa55;
+            background-image: 
+                linear-gradient(45deg, #338833 25%, transparent 25%),
+                linear-gradient(-45deg, #338833 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #338833 75%),
+                linear-gradient(-45deg, transparent 75%, #338833 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* Steam Effect */
+        @keyframes steam {
+            0% { transform: translateY(0) scaleX(1); opacity: 0.8; }
+            50% { transform: translateY(-25px) scaleX(1.3); opacity: 0.4; }
+            100% { transform: translateY(-50px) scaleX(1.8); opacity: 0; }
+        }
+
+        .steam-particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            filter: blur(4px);
+            animation: steam 2.5s infinite ease-out;
+        }
+
+        /* Floating Hearts / XP Particles */
+        @keyframes float-up {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-120px) rotate(360deg); opacity: 0; }
+        }
+
+        .floating-particle {
+            position: absolute;
+            pointer-events: none;
+            animation: float-up 2.5s forwards ease-out;
+            z-index: 50;
+        }
+
+        /* Torch Flicker Animation */
+        @keyframes flicker {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px #ff9800); }
+            50% { opacity: 0.8; filter: drop-shadow(0 0 4px #ff5722); }
+        }
+        .torch-glow {
+            animation: flicker 0.15s infinite alternate;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #55aa55;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-between overflow-x-hidden font-vt select-none relative">
+
+    <!-- Minecraft Ambient Background Details -->
+    <div class="fixed inset-0 pointer-events-none z-0 opacity-20 bg-[radial-gradient(#338833_1px,transparent_1px)] [background-size:16px_16px]"></div>
+
+    <!-- Torches on Sides (Desktop) -->
+    <div class="fixed top-12 left-4 md:left-12 flex flex-col items-center pointer-events-none z-10 hidden sm:flex">
+        <div class="w-4 h-6 bg-yellow-400 rounded-t-sm torch-glow"></div>
+        <div class="w-3 h-10 bg-amber-800 border-2 border-black"></div>
+    </div>
+    <div class="fixed top-12 right-4 md:right-12 flex flex-col items-center pointer-events-none z-10 hidden sm:flex">
+        <div class="w-4 h-6 bg-yellow-400 rounded-t-sm torch-glow"></div>
+        <div class="w-3 h-10 bg-amber-800 border-2 border-black"></div>
+    </div>
+
+    <!-- Header Section -->
+    <header class="w-full text-center py-6 px-4 z-10 bg-black/40 border-b-4 border-black">
+        <h1 class="font-pixel text-xl sm:text-3xl md:text-4xl text-green-500 drop-shadow-[0_4px_0_rgba(0,0,0,1)] tracking-wider">
+            DOMINO'S x MINECRAFT
+        </h1>
+        <p class="font-vt text-lg sm:text-2xl text-yellow-300 mt-2 tracking-widest">
+            ¡Edición Especial Creeper de Amor! 🍕💚
+        </p>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="w-full max-w-4xl flex-1 flex flex-col items-center justify-center px-4 py-6 z-10 space-y-8">
+
+        <!-- Controls / Customization Panel (Pre-Open) -->
+        <div id="setup-panel" class="mc-card p-4 sm:p-6 w-full max-w-md text-black space-y-4 shadow-2xl">
+            <h2 class="font-pixel text-xs sm:text-sm text-center text-gray-800 uppercase tracking-wider">
+                ⚙️ Personalizar Entregas
+            </h2>
+            
+            <div class="space-y-2">
+                <label for="girl-name" class="block text-xl font-bold">Nombre de la chica especial:</label>
+                <input type="text" id="girl-name" value="Alex" 
+                    class="w-full px-3 py-2 bg-gray-100 border-4 border-black font-vt text-2xl text-black focus:outline-none focus:bg-white"
+                    placeholder="Ej. Sofia, María, Valentina...">
+            </div>
+
+            <div class="space-y-2">
+                <label for="custom-message" class="block text-xl font-bold">Mensaje Romántico:</label>
+                <textarea id="custom-message" rows="3" 
+                    class="w-full px-3 py-2 bg-gray-100 border-4 border-black font-vt text-xl text-black focus:outline-none focus:bg-white resize-none"
+                    placeholder="Escribe tu nota especial...">¡Eres la chica más genial de todo el Overworld! Me haces explotar el corazón de alegría como un Creeper enamorado. 💚🍕</textarea>
+            </div>
+
+            <div class="text-xs text-center text-gray-700 italic">
+                (Personaliza los datos arriba y presiona abajo para ver la magia)
+            </div>
+        </div>
+
+        <!-- Interactive 3D Pizza Box Area -->
+        <div class="perspective-1000 my-4">
+            <div id="pizza-box" class="box-container cursor-pointer" onclick="toggleBox()">
+                
+                <!-- Box Base / Inside (Revealed on Open) -->
+                <div class="absolute inset-0 bg-red-800 border-4 border-black rounded-lg shadow-2xl overflow-hidden flex items-center justify-center">
+                    
+                    <!-- Inside Packaging Print (Domino's Style) -->
+                    <div class="absolute inset-2 border-2 border-dashed border-red-400 opacity-30 pointer-events-none"></div>
+
+                    <!-- Pixel Detroit-Style Square Pizza -->
+                    <div id="pizza" class="relative w-4/5 h-4/5 bg-amber-700 border-4 border-yellow-900 rounded-md p-2 flex flex-col justify-between shadow-inner">
+                        <!-- Crust Detail -->
+                        <div class="absolute inset-0 border-8 border-amber-600 rounded opacity-90 pointer-events-none"></div>
+
+                        <!-- Melted Cheese & Pepperoni Pixel Grid -->
+                        <div class="w-full h-full bg-yellow-400 border-2 border-yellow-600 rounded relative overflow-hidden grid grid-cols-4 grid-rows-4 gap-1 p-2">
+                            <!-- Pepperonis (Square/Blocky) -->
+                            <div class="bg-red-600 border-2 border-red-800 rounded-sm col-start-1 row-start-1 shadow-sm"></div>
+                            <div class="bg-red-600 border-2 border-red-800 rounded-sm col-start-3 row-start-1 shadow-sm"></div>
+                            <div class="bg-red-600 border-2 border-red-800 rounded-sm col-start-2 row-start-3 shadow-sm"></div>
+                            <div class="bg-red-600 border-2 border-red-800 rounded-sm col-start-4 row-start-4 shadow-sm"></div>
+                            
+                            <!-- Green Peppers (Minecraft Emerald Pieces) -->
+                            <div class="bg-green-600 w-3 h-3 col-start-2 row-start-2 transform rotate-45"></div>
+                            <div class="bg-green-600 w-3 h-3 col-start-4 row-start-2"></div>
+                            <div class="bg-green-600 w-3 h-3 col-start-1 row-start-4 transform rotate-12"></div>
+                            
+                            <!-- Cheese Melt Highlights -->
+                            <div class="bg-yellow-200 w-full h-2 col-span-2 row-start-2 rounded-full opacity-60"></div>
+                            <div class="bg-yellow-200 w-full h-2 col-span-2 row-start-4 rounded-full opacity-60"></div>
+                        </div>
+
+                        <!-- Steam Particles Container -->
+                        <div id="steam-container" class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                            <div class="steam-particle w-6 h-6 left-1/4 top-1/2"></div>
+                            <div class="steam-particle w-8 h-8 left-1/2 top-1/3" style="animation-delay: 0.8s;"></div>
+                            <div class="steam-particle w-5 h-5 right-1/4 top-1/2" style="animation-delay: 1.5s;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Box Lid (Top Face with Creeper Face) -->
+                <div id="box-lid" class="box-lid creeper-bg border-4 border-black rounded-lg flex flex-col items-center justify-between p-4 shadow-2xl">
+                    
+                    <!-- Domino's Logo Top Left Accent -->
+                    <div class="self-start flex items-center space-x-1 bg-blue-600 border-2 border-black px-2 py-1 rounded shadow">
+                        <div class="w-3 h-3 bg-red-600 border border-white rotate-45"></div>
+                        <span class="font-pixel text-[10px] text-white">DOMINO'S</span>
+                    </div>
+
+                    <!-- Iconic Pixelated Creeper Face -->
+                    <div class="w-36 h-36 sm:w-48 sm:h-48 grid grid-cols-8 grid-rows-8 gap-0 my-auto bg-green-600/30 p-2 rounded border border-green-800/40">
+                        <!-- Eyes -->
+                        <div class="bg-black col-start-2 col-span-2 row-start-2 row-span-2 shadow-inner"></div>
+                        <div class="bg-black col-start-6 col-span-2 row-start-2 row-span-2 shadow-inner"></div>
+                        <!-- Nose -->
+                        <div class="bg-black col-start-4 col-span-2 row-start-4 row-span-3 shadow-inner"></div>
+                        <!-- Mouth Side Blocks -->
+                        <div class="bg-black col-start-3 row-start-5 row-span-3 shadow-inner"></div>
+                        <div class="bg-black col-start-6 row-start-5 row-span-3 shadow-inner"></div>
+                    </div>
+
+                    <!-- Label Front -->
+                    <div class="w-full bg-yellow-400 border-2 border-black text-black text-center py-1 font-pixel text-xs rounded shadow-md">
+                        ¡TOCA PARA ABRIR TU PEDIDO! 🍕
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Open Action Button -->
+        <button onclick="toggleBox()" class="mc-button mc-button-green font-pixel text-sm sm:text-base px-6 py-4 rounded cursor-pointer tracking-wider flex items-center space-x-3">
+            <i class="fa-solid fa-box-open"></i>
+            <span id="btn-text">ABRIR CAJA CREEPER</span>
+        </button>
+
+        <!-- Revealed Letter / Receipt Card (Appears after open) -->
+        <div id="receipt-card" class="hidden mc-card p-6 w-full max-w-lg text-black space-y-4 animate-fade-in relative shadow-2xl">
+            <!-- Ribbon Banner -->
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white font-pixel text-xs px-4 py-1 border-2 border-black shadow">
+                ENTREGA ESPECIAL DE AMOR
+            </div>
+
+            <!-- Receipt Header -->
+            <div class="border-b-2 border-dashed border-gray-600 pb-3 text-center pt-2">
+                <h3 class="font-pixel text-lg text-green-800">RECETA Y NOTA ESPECIAL</h3>
+                <p class="text-gray-700 text-lg">Orden #3010-MINECRAFT</p>
+            </div>
+
+            <!-- Greeting -->
+            <div class="space-y-2">
+                <p class="text-2xl font-bold text-gray-900">
+                    Cliente VIP: <span id="display-name" class="text-green-700 underline underline-offset-4 decoration-2 decoration-green-500">Alex</span> 💚
+                </p>
+                <div class="bg-amber-50 p-4 border-2 border-amber-300 rounded text-xl text-gray-800 leading-relaxed italic shadow-inner" id="display-message">
+                    "¡Eres la chica más genial de todo el Overworld! Me haces explotar el corazón de alegría como un Creeper enamorado. 💚🍕"
+                </div>
+            </div>
+
+            <!-- Perks / Rewards Code Box -->
+            <div class="bg-gray-800 text-white p-4 border-2 border-black rounded space-y-2">
+                <div class="flex justify-between items-center text-xs font-pixel text-yellow-400">
+                    <span>CÓDIGO DE RECOMPENSA EXCLUSIVO</span>
+                    <i class="fa-solid fa-gem text-green-400 text-base"></i>
+                </div>
+                <div class="flex items-center justify-between bg-black p-2 border border-gray-700 rounded font-pixel text-sm sm:text-base text-green-400 tracking-widest">
+                    <span id="promo-code">CUTE-CREEPER-LOVE-2026</span>
+                    <button onclick="copyCode()" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded border border-gray-500 font-vt">
+                        <i class="fa-regular fa-copy"></i> Copiar
+                    </button>
+                </div>
+                <ul class="text-xs text-gray-300 list-disc list-inside space-y-1 pt-1 font-vt text-base">
+                    <li>1x Capa de Amor Infinito en Minecraft</li>
+                    <li>1x Mascota "Bloque de Pizza de Queso"</li>
+                    <li>Amor incondicional de por vida ❤️</li>
+                </ul>
+            </div>
+
+            <!-- Footer signature -->
+            <div class="text-center font-pixel text-xs text-gray-600 pt-2">
+                Gracias por existir en mi mundo 🎮✨
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-4 text-gray-400 font-vt text-lg border-t border-gray-800 z-10 bg-black/60">
+        Creado con 💚 para una persona súper especial | Inspirado en Minecraft & Domino's
+    </footer>
+
+    <!-- Web Audio API Synth & Interaction Scripts -->
+    <script>
+        let isOpen = false;
+        let audioCtx = null;
+
+        // Initialize Web Audio API on user interaction
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Synthesize retro chiptune sounds for Minecraft UI feel
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    // Minecraft UI Click sound (Short square wave beep)
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'open') {
+                    // Fanfare / Box Open sound (Rising arpeggio notes)
+                    const notes = [261.63, 329.63, 392.00, 523.25, 659.25]; // C, E, G, C5, E5
+                    notes.forEach((freq, index) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now + index * 0.08);
+                        
+                        noteGain.gain.setValueAtTime(0.2, now + index * 0.08);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.08 + 0.3);
+
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+
+                        noteOsc.start(now + index * 0.08);
+                        noteOsc.stop(now + index * 0.08 + 0.3);
+                    });
+                } else if (type === 'creeper') {
+                    // SSSSS hiss sound simulation using noise buffer
+                    const bufferSize = audioCtx.sampleRate * 0.4;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const output = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        output[i] = Math.random() * 2 - 1;
+                    }
+                    const whiteNoise = audioCtx.createBufferSource();
+                    whiteNoise.buffer = buffer;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.value = 3000;
+
+                    const noiseGain = audioCtx.createGain();
+                    noiseGain.gain.setValueAtTime(0.1, now);
+                    noiseGain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+
+                    whiteNoise.connect(filter);
+                    filter.connect(noiseGain);
+                    noiseGain.connect(audioCtx.destination);
+
+                    whiteNoise.start(now);
+                    whiteNoise.stop(now + 0.4);
+                }
+            } catch (e) {
+                console.log("Audio play blocked or unsupported", e);
+            }
+        }
+
+        // Toggle Box Open / Close logic
+        function toggleBox() {
+            const boxLid = document.getElementById('box-lid');
+            const receiptCard = document.getElementById('receipt-card');
+            const setupPanel = document.getElementById('setup-panel');
+            const btnText = document.getElementById('btn-text');
+            
+            const girlName = document.getElementById('girl-name').value.trim() || "Alex";
+            const customMessage = document.getElementById('custom-message').value.trim() || "¡Eres la chica más especial!";
+
+            document.getElementById('display-name').textContent = girlName;
+            document.getElementById('display-message').textContent = `"${customMessage}"`;
+
+            if (!isOpen) {
+                // Open Box
+                boxLid.classList.add('open');
+                playSound('creeper');
+                setTimeout(() => playSound('open'), 200);
+
+                // Spawn experience & heart particles
+                spawnParticles();
+
+                // Show receipt with animation
+                receiptCard.classList.remove('hidden');
+                setupPanel.classList.add('hidden');
+                btnText.textContent = "CERRAR CAJA DE PIZZA";
+                isOpen = true;
+            } else {
+                // Close Box
+                boxLid.classList.remove('open');
+                playSound('click');
+                receiptCard.classList.add('hidden');
+                setupPanel.classList.remove('hidden');
+                btnText.textContent = "ABRIR CAJA CREEPER";
+                isOpen = false;
+            }
+        }
+
+        // Spawn Minecraft Heart & XP Particles
+        function spawnParticles() {
+            const container = document.body;
+            const colors = ['❤️', '💖', '💚', '✨', '🍕', '💎'];
+            
+            for (let i = 0; i < 25; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'floating-particle font-pixel text-xl select-none';
+                particle.textContent = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Randomize positions around the center
+                const randomX = (Math.random() - 0.5) * 300;
+                const randomY = (Math.random() - 0.5) * 100;
+                
+                particle.style.left = `calc(50% + ${randomX}px)`;
+                particle.style.top = `calc(50% + ${randomY}px)`;
+                particle.style.animationDelay = `${Math.random() * 0.5}s`;
+                
+                container.appendChild(particle);
+                
+                // Cleanup after animation finishes
+                setTimeout(() => {
+                    particle.remove();
+                }, 3000);
+            }
+        }
+
+        // Copy Promo Code function
+        function copyCode() {
+            playSound('click');
+            const code = document.getElementById('promo-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert("¡Código copiado con éxito! 🎮💚");
+            }).catch(() => {
+                alert("Código: " + code);
+            });
+        }
+    </script>
+</body>
+</html>
